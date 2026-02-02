@@ -4,45 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>น้องเก็บให้ - อัดเสียง</title>
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body { font-family: sans-serif; text-align: center; padding-top: 50px; background-color: #f4f4f4; }
         .btn { 
             background-color: #00B900; color: white; border: none; 
             padding: 20px 40px; font-size: 22px; border-radius: 50px; 
             cursor: pointer; box-shadow: 0 4px 15px rgba(0,185,0,0.3);
-            width: 80%; max-width: 300px; font-weight: bold;
+            width: 85%; max-width: 320px; font-weight: bold;
         }
-        .status { margin-top: 20px; color: #666; font-size: 14px; }
-    </script>
+    </style>
 </head>
 <body>
-    <img src="https://img5.pic.in.th/file/secure-sv1/Untitled-design-2026-02-02T162053.png" width="100" style="margin-bottom: 20px;">
-    <h2>น้องเก็บให้</h2>
-    <p>กดปุ่มด้านล่างเพื่อบันทึกเสียงครับ</p>
+    <h2 style="color: #333;">น้องเก็บให้</h2>
+    <p style="color: #666;">กดปุ่มด้านล่างเพื่อบันทึกเสียง</p>
     
-    <button class="btn" id="btnVoice">🎤 เริ่มอัดเสียง</button>
-    <div id="status" class="status">กำลังโหลดระบบ...</div>
+    <button class="btn" onclick="openVoice()">🎤 เริ่มอัดเสียง</button>
 
     <script>
-        // 2. เริ่มต้นระบบ LIFF โดยใช้ ID ของคุณ
-        async function main() {
-            try {
-                await liff.init({ liffId: "2009031318-2mGj5MQZ" });
-                if (liff.isLoggedIn()) {
-                    document.getElementById('status').innerText = "ระบบพร้อมใช้งาน";
-                    document.getElementById('btnVoice').onclick = function() {
-                        // 3. สั่งเปิดหน้าอัดเสียงผ่านคำสั่งที่ LINE ยอมรับ
-                        window.location.href = "https://line.me/R/nv/voiceRecorder/";
-                    };
-                } else {
-                    liff.login(); // ถ้ายังไม่ได้ Login ให้เด้งหน้า Login ของ LINE
-                }
-            } catch (err) {
-                document.getElementById('status').innerText = "เกิดข้อผิดพลาด: " + err;
-            }
+        function openVoice() {
+            // ใช้คำสั่งเปิดไมค์โดยตรง ซึ่งคุณได้รับสิทธิ์ Permissions ครบแล้วในรูปที่ 42
+            window.location.href = "https://line.me/R/nv/voiceRecorder/";
         }
-        main();
     </script>
 </body>
 </html>
