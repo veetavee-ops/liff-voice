@@ -4,11 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>น้องเก็บให้ - อัดเสียง</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; }
+        .btn { 
+            background-color: #00B900; color: white; border: none; 
+            padding: 20px 40px; font-size: 20px; border-radius: 10px; cursor: pointer; 
+        }
+    </style>
 </head>
 <body>
+    <h2>เตรียมส่งข้อความเสียง</h2>
+    <p>คลิกปุ่มด้านล่างเพื่อเริ่มอัดเสียงครับ</p>
+    <button class="btn" onclick="openVoice()">เริ่มอัดเสียง</button>
+
     <script>
-        // เมื่อเปิดหน้านี้ จะสั่งให้แอป LINE เปิดหน้าจออัดเสียงทันที
-        window.location.href = "https://line.me/R/nv/voiceRecorder/";
+        function openVoice() {
+            window.location.href = "https://line.me/R/nv/voiceRecorder/";
+        }
+        // พยายามเปิดให้อัตโนมัติในบางเครื่อง
+        window.onload = function() {
+            setTimeout(openVoice, 500);
+        };
     </script>
 </body>
 </html>
