@@ -6,45 +6,68 @@
     <title>น้องเก็บให้ - บันทึกเสียง</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px 20px; background-color: #f8f9fa; }
-        .btn { 
-            background-color: #00B900; color: white; border: none; padding: 25px; 
-            border-radius: 50px; font-size: 24px; width: 100%; max-width: 350px;
-            font-weight: bold; cursor: pointer; box-shadow: 0 10px 20px rgba(0,185,0,0.2);
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; text-align: center; padding: 40px 20px; background-color: #ffffff; color: #333; }
+        .container { max-width: 400px; margin: 0 auto; }
+        .icon { font-size: 60px; margin-bottom: 10px; }
+        h1 { font-size: 24px; margin-bottom: 5px; }
+        p { color: #666; margin-bottom: 30px; }
+        
+        /* ปุ่มหลักสำหรับการอัดเสียง */
+        .btn-main { 
+            background-color: #00B900; color: white; border: none; padding: 22px; 
+            border-radius: 40px; font-size: 22px; width: 100%; font-weight: bold; 
+            cursor: pointer; box-shadow: 0 6px 20px rgba(0,185,0,0.3); transition: 0.3s;
         }
-        .status-box { margin-top: 30px; padding: 15px; border-radius: 10px; background: #eee; font-size: 14px; color: #555; }
+        .btn-main:active { transform: scale(0.98); box-shadow: 0 2px 10px rgba(0,185,0,0.2); }
+        
+        .status-box { margin-top: 40px; padding: 15px; border-radius: 12px; background: #f0f0f0; font-size: 14px; }
+        
+        /* ปุ่มสำหรับรีเซ็ตสิทธิ์ กรณีมีปัญหา */
+        .btn-fix { margin-top: 20px; background: none; border: 1px solid #ccc; color: #999; padding: 8px 15px; border-radius: 8px; font-size: 12px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <h1 style="color: #333;">🎤 น้องเก็บให้</h1>
-    <p>กดปุ่มเพื่อเริ่มบันทึกเสียงงานของคุณ</p>
-    
-    <button class="btn" id="voiceBtn">เริ่มบันทึกเสียง</button>
+    <div class="container">
+        <div class="icon">🎤</div>
+        <h1>น้องเก็บให้</h1>
+        <p>กดปุ่มเพื่อเริ่มบันทึกเสียงงานของคุณ</p>
+        
+        <button class="btn-main" id="voiceBtn">เริ่มบันทึกเสียง</button>
 
-    <div class="status-box" id="status">กำลังเชื่อมต่อกับระบบ LINE...</div>
+        <div class="status-box" id="status">กำลังเตรียมระบบ...</div>
+        
+        <button class="btn-fix" onclick="resetApp()">ปุ่มกดไม่ทำงาน? (ล้างสิทธิ์และลองใหม่)</button>
+    </div>
 
     <script>
-        async function initLIFF() {
+        // 1. เริ่มต้นระบบ LIFF
+        async function startSystem() {
             try {
-                // 1. เชื่อมต่อกับ LINE ด้วย ID ของคุณ
                 await liff.init({ liffId: "2009031318-2mGj5MQZ" });
                 
                 if (!liff.isLoggedIn()) {
-                    liff.login(); // บังคับ Login เพื่อดึงสิทธิ์ที่เพิ่งเปิดใหม่
+                    liff.login(); // บังคับล็อกอินเพื่อให้สิทธิ์ CHAT_MESSAGE ทำงาน
                 } else {
-                    document.getElementById('status').innerText = "ระบบพร้อม! เมื่ออัดเสร็จ เสียงจะถูกส่งเข้าแชททันที";
+                    document.getElementById('status').innerText = "✅ ระบบพร้อมอัดเสียงและส่งเข้าแชท";
                     
                     document.getElementById('voiceBtn').onclick = function() {
-                        // 2. เรียกใช้ตัวอัดเสียงมาตรฐานของ LINE
-                        // เมื่อคุณอัดเสร็จและกด "ส่ง" LINE จะส่งไฟล์เสียงเข้าไปในแชท "น้องเก็บให้" โดยอัตโนมัติ
-                        window.location.href = "https://line.me/R/nv/voiceRecorder/";
+                        // 2. คำสั่งเปิดหน้าจออัดเสียงของ LINE
+                        // เราใช้ "line://" scheme เพราะเป็นวิธีเดียวที่เรียกไมค์มาตรฐานของ LINE ได้
+                        window.location.href = "line://nv/voiceRecorder/";
                     };
                 }
-            } catch (error) {
-                document.getElementById('status').innerText = "Error: " + error.message;
+            } catch (err) {
+                document.getElementById('status').innerHTML = "❌ เกิดข้อผิดพลาด: " + err;
             }
         }
-        initLIFF();
+
+        // ฟังก์ชันช่วยชีวิต กรณีเครื่องจำสิทธิ์เก่า
+        function resetApp() {
+            liff.logout();
+            location.reload();
+        }
+
+        startSystem();
     </script>
 </body>
 </html>
