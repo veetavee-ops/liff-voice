@@ -8,23 +8,22 @@
         body { font-family: sans-serif; text-align: center; padding-top: 50px; }
         .btn { 
             background-color: #00B900; color: white; border: none; 
-            padding: 20px 40px; font-size: 20px; border-radius: 10px; cursor: pointer; 
+            padding: 20px 40px; font-size: 22px; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
     </style>
 </head>
 <body>
-    <h2>เตรียมส่งข้อความเสียง</h2>
-    <p>คลิกปุ่มด้านล่างเพื่อเริ่มอัดเสียงครับ</p>
-    <button class="btn" onclick="openVoice()">เริ่มอัดเสียง</button>
+    <h2 style="color: #333;">บันทึกเสียง "น้องเก็บให้"</h2>
+    <p style="color: #666;">กดปุ่มด้านล่างเพื่อเริ่มพูดครับ</p>
+    
+    <button class="btn" onclick="openVoice()">🎤 เริ่มอัดเสียง</button>
 
     <script>
         function openVoice() {
-            location.replace("https://line.me/R/nv/voiceRecorder/");
+            window.location.href = "https://line.me/R/nv/voiceRecorder/";
         }
-        // พยายามเปิดให้อัตโนมัติในบางเครื่อง
-        window.onload = function() {
-            setTimeout(openVoice, 500);
-        };
+        // เราจะ "ไม่ใช้" window.onload แล้ว เพื่อตัดปัญหา Error แวบแรกทิ้งไปครับ
     </script>
 </body>
 </html>
