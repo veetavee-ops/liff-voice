@@ -2,47 +2,468 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>น้องเก็บให้ - ตัวทดสอบระบบ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>น้องเก็บให้ - บันทึกเสียง</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 40px 20px; }
-        .btn { background: #00B900; color: #fff; border: none; padding: 20px; border-radius: 40px; font-size: 20px; width: 100%; font-weight: bold; }
-        #errorLog { color: red; margin-top: 20px; font-size: 14px; background: #fff0f0; padding: 10px; border-radius: 10px; display: none; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #fff;
+        }
+        .container {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 30px 20px;
+            width: 100%;
+            max-width: 400px;
+            color: #333;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        /* ปุ่มอัดเสียง */
+        .record-btn {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(145deg, #00B900, #009900);
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 8px 25px rgba(0,185,0,0.4);
+            transition: all 0.3s ease;
+        }
+        .record-btn:active {
+            transform: scale(0.95);
+        }
+        .record-btn.recording {
+            background: linear-gradient(145deg, #ff4444, #cc0000);
+            box-shadow: 0 8px 25px rgba(255,0,0,0.4);
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        /* สถานะ */
+        #status {
+            text-align: center;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        #status.success { background: #e8f5e9; color: #2e7d32; }
+        #status.error { background: #ffebee; color: #c62828; }
+        #status.recording { background: #fff3e0; color: #e65100; }
+        
+        /* ตัวจับเวลา */
+        #timer {
+            text-align: center;
+            font-size: 48px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            font-family: monospace;
+        }
+        
+        /* Audio player */
+        #audioPlayer {
+            width: 100%;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        /* ปุ่มส่ง */
+        .send-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(145deg, #00B900, #009900);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: none;
+        }
+        .send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        /* ผลลัพธ์ */
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f7ff;
+            border-radius: 10px;
+            display: none;
+        }
+        #result h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        #transcription {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        /* Debug log */
+        #debugLog {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            font-size: 11px;
+            color: #666;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+        }
+        .show-debug #debugLog { display: block; }
     </style>
 </head>
 <body>
-    <h2>🎤 ทดสอบอัดเสียง</h2>
-    <button class="btn" id="voiceBtn">กดตรงนี้เพื่ออัดเสียง</button>
-    <div id="status" style="margin-top:20px; color: #666;">กำลังเช็กสิทธิ์...</div>
-    <div id="errorLog"></div>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 น้องเก็บให้</h1>
+            <p>กดปุ่มค้างไว้เพื่อบันทึกเสียง</p>
+        </div>
+        
+        <div id="status">กำลังเตรียมระบบ...</div>
+        
+        <div id="timer">00:00</div>
+        
+        <button class="record-btn" id="recordBtn" disabled>🎤</button>
+        
+        <audio id="audioPlayer" controls></audio>
+        
+        <button class="send-btn" id="sendBtn">📤 ส่งเสียงเพื่อแปลงเป็นข้อความ</button>
+        
+        <div id="result">
+            <h3>📝 ข้อความที่แปลงได้:</h3>
+            <div id="transcription"></div>
+        </div>
+        
+        <div id="debugLog"></div>
+    </div>
 
     <script>
-        async function start() {
+        // ===== ตั้งค่า =====
+        const CONFIG = {
+            liffId: "2009031318-2mGj5MQZ",  // ใส่ LIFF ID ของคุณ
+            // ใส่ URL ของ backend ที่จะรับไฟล์เสียง (ถ้ามี)
+            backendUrl: null  // เช่น "https://your-server.com/api/transcribe"
+        };
+
+        // ===== Elements =====
+        const recordBtn = document.getElementById('recordBtn');
+        const status = document.getElementById('status');
+        const timer = document.getElementById('timer');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const sendBtn = document.getElementById('sendBtn');
+        const result = document.getElementById('result');
+        const transcription = document.getElementById('transcription');
+        const debugLog = document.getElementById('debugLog');
+
+        // ===== State =====
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let audioBlob = null;
+        let startTime = null;
+        let timerInterval = null;
+        let stream = null;
+
+        // ===== Debug Logger =====
+        function log(msg) {
+            console.log(msg);
+            const time = new Date().toLocaleTimeString();
+            debugLog.innerHTML += `<div>[${time}] ${msg}</div>`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+        }
+
+        // ===== Status Update =====
+        function setStatus(msg, type = '') {
+            status.textContent = msg;
+            status.className = type;
+        }
+
+        // ===== Timer =====
+        function updateTimer() {
+            if (!startTime) return;
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const secs = (elapsed % 60).toString().padStart(2, '0');
+            timer.textContent = `${mins}:${secs}`;
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 100);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        function resetTimer() {
+            timer.textContent = '00:00';
+            startTime = null;
+        }
+
+        // ===== Initialize LIFF =====
+        async function initLiff() {
             try {
-                await liff.init({ liffId: "2009031318-2mGj5MQZ" });
-                if (!liff.isLoggedIn()) { liff.login(); }
-                else {
-                    document.getElementById('status').innerText = "✅ ระบบ SDK เชื่อมต่อสำเร็จ";
-                    document.getElementById('voiceBtn').onclick = function() {
-                        try {
-                            // ลองเปิดด้วยวิธีมาตรฐาน
-                            window.location.href = "line://nv/voiceRecorder/";
-                        } catch (e) {
-                            showError("ปุ่มกดพัง: " + e.message);
-                        }
-                    };
+                log('กำลังเริ่มต้น LIFF...');
+                await liff.init({ liffId: CONFIG.liffId });
+                log('LIFF init สำเร็จ');
+                
+                if (!liff.isLoggedIn()) {
+                    log('ยังไม่ได้ login, กำลัง redirect...');
+                    liff.login();
+                    return;
                 }
+                
+                const profile = await liff.getProfile();
+                log(`ยินดีต้อนรับ: ${profile.displayName}`);
+                
+                await initMicrophone();
+                
             } catch (err) {
-                showError("ระบบ LINE บล็อก: " + err.code + " - " + err.message);
+                log(`LIFF Error: ${err.message}`);
+                setStatus('❌ เชื่อมต่อ LINE ไม่สำเร็จ: ' + err.message, 'error');
             }
         }
-        function showError(msg) {
-            const log = document.getElementById('errorLog');
-            log.style.display = 'block';
-            log.innerText = msg;
+
+        // ===== Initialize Microphone =====
+        async function initMicrophone() {
+            try {
+                log('กำลังขอสิทธิ์ไมโครโฟน...');
+                
+                // ขอสิทธิ์ไมโครโฟน
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        sampleRate: 44100
+                    } 
+                });
+                
+                log('ได้รับสิทธิ์ไมโครโฟนแล้ว');
+                setStatus('✅ พร้อมบันทึกเสียง - กดปุ่มค้างไว้', 'success');
+                recordBtn.disabled = false;
+                
+                setupRecordButton();
+                
+            } catch (err) {
+                log(`Microphone Error: ${err.name} - ${err.message}`);
+                
+                if (err.name === 'NotAllowedError') {
+                    setStatus('❌ กรุณาอนุญาตการใช้ไมโครโฟน', 'error');
+                } else if (err.name === 'NotFoundError') {
+                    setStatus('❌ ไม่พบไมโครโฟน', 'error');
+                } else {
+                    setStatus('❌ ไม่สามารถเข้าถึงไมโครโฟน: ' + err.message, 'error');
+                }
+            }
         }
-        start();
+
+        // ===== Setup Record Button =====
+        function setupRecordButton() {
+            // กดค้าง = เริ่มอัด
+            recordBtn.addEventListener('touchstart', startRecording);
+            recordBtn.addEventListener('mousedown', startRecording);
+            
+            // ปล่อย = หยุดอัด
+            recordBtn.addEventListener('touchend', stopRecording);
+            recordBtn.addEventListener('mouseup', stopRecording);
+            recordBtn.addEventListener('mouseleave', stopRecording);
+            
+            // ป้องกัน context menu บน mobile
+            recordBtn.addEventListener('contextmenu', (e) => e.preventDefault());
+        }
+
+        // ===== Start Recording =====
+        function startRecording(e) {
+            e.preventDefault();
+            if (mediaRecorder && mediaRecorder.state === 'recording') return;
+            
+            log('เริ่มบันทึกเสียง...');
+            
+            audioChunks = [];
+            audioBlob = null;
+            audioPlayer.style.display = 'none';
+            sendBtn.style.display = 'none';
+            result.style.display = 'none';
+            
+            try {
+                // สร้าง MediaRecorder
+                mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: MediaRecorder.isTypeSupported('audio/webm') 
+                        ? 'audio/webm' 
+                        : 'audio/mp4'
+                });
+                
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) {
+                        audioChunks.push(e.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = onRecordingStop;
+                
+                mediaRecorder.start(100); // เก็บ data ทุก 100ms
+                
+                recordBtn.classList.add('recording');
+                recordBtn.textContent = '🔴';
+                setStatus('🔴 กำลังบันทึก... ปล่อยปุ่มเพื่อหยุด', 'recording');
+                startTimer();
+                
+            } catch (err) {
+                log(`Recording Error: ${err.message}`);
+                setStatus('❌ ไม่สามารถเริ่มบันทึก: ' + err.message, 'error');
+            }
+        }
+
+        // ===== Stop Recording =====
+        function stopRecording(e) {
+            e.preventDefault();
+            if (!mediaRecorder || mediaRecorder.state !== 'recording') return;
+            
+            log('หยุดบันทึกเสียง');
+            mediaRecorder.stop();
+            
+            recordBtn.classList.remove('recording');
+            recordBtn.textContent = '🎤';
+            stopTimer();
+        }
+
+        // ===== On Recording Stop =====
+        function onRecordingStop() {
+            log(`บันทึกเสร็จ: ${audioChunks.length} chunks`);
+            
+            // สร้าง blob
+            const mimeType = mediaRecorder.mimeType || 'audio/webm';
+            audioBlob = new Blob(audioChunks, { type: mimeType });
+            log(`Audio blob: ${(audioBlob.size / 1024).toFixed(2)} KB, type: ${mimeType}`);
+            
+            // แสดง player
+            const audioUrl = URL.createObjectURL(audioBlob);
+            audioPlayer.src = audioUrl;
+            audioPlayer.style.display = 'block';
+            
+            // แสดงปุ่มส่ง
+            sendBtn.style.display = 'block';
+            
+            setStatus('✅ บันทึกเสร็จแล้ว - กดฟังหรือส่งได้เลย', 'success');
+        }
+
+        // ===== Send Audio for Transcription =====
+        sendBtn.addEventListener('click', async () => {
+            if (!audioBlob) {
+                setStatus('❌ ไม่มีไฟล์เสียง', 'error');
+                return;
+            }
+            
+            log('กำลังส่งไฟล์เสียง...');
+            setStatus('⏳ กำลังส่งไฟล์เสียง...', '');
+            sendBtn.disabled = true;
+            
+            if (CONFIG.backendUrl) {
+                // ส่งไป backend จริง
+                await sendToBackend();
+            } else {
+                // Demo mode - แสดงข้อมูลไฟล์
+                showDemoResult();
+            }
+            
+            sendBtn.disabled = false;
+        });
+
+        // ===== Send to Backend =====
+        async function sendToBackend() {
+            try {
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'recording.webm');
+                
+                // เพิ่ม LINE user ID
+                const profile = await liff.getProfile();
+                formData.append('userId', profile.userId);
+                
+                const response = await fetch(CONFIG.backendUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                log(`Backend response: ${JSON.stringify(data)}`);
+                
+                result.style.display = 'block';
+                transcription.textContent = data.text || data.transcription || '(ไม่มีข้อความ)';
+                setStatus('✅ แปลงเสียงเป็นข้อความสำเร็จ!', 'success');
+                
+            } catch (err) {
+                log(`Backend Error: ${err.message}`);
+                setStatus('❌ ส่งไฟล์ไม่สำเร็จ: ' + err.message, 'error');
+            }
+        }
+
+        // ===== Demo Result (when no backend) =====
+        function showDemoResult() {
+            log('Demo mode - ไม่มี backend');
+            
+            result.style.display = 'block';
+            transcription.innerHTML = `
+                <strong>📊 ข้อมูลไฟล์เสียง:</strong><br>
+                • ขนาด: ${(audioBlob.size / 1024).toFixed(2)} KB<br>
+                • ประเภท: ${audioBlob.type}<br>
+                • ความยาว: ${timer.textContent}<br><br>
+                <em>⚠️ ยังไม่ได้ตั้งค่า Backend URL<br>
+                กรุณาตั้งค่า CONFIG.backendUrl เพื่อส่งไป AI แปลงเสียง</em>
+            `;
+            setStatus('✅ ไฟล์เสียงพร้อมส่ง (Demo Mode)', 'success');
+        }
+
+        // ===== Toggle Debug =====
+        document.body.addEventListener('dblclick', () => {
+            document.body.classList.toggle('show-debug');
+        });
+
+        // ===== Start =====
+        initLiff();
     </script>
 </body>
 </html>
