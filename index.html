@@ -3,71 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>น้องเก็บให้ - บันทึกเสียง</title>
+    <title>น้องเก็บให้ - ตัวทดสอบระบบ</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; text-align: center; padding: 40px 20px; background-color: #ffffff; color: #333; }
-        .container { max-width: 400px; margin: 0 auto; }
-        .icon { font-size: 60px; margin-bottom: 10px; }
-        h1 { font-size: 24px; margin-bottom: 5px; }
-        p { color: #666; margin-bottom: 30px; }
-        
-        /* ปุ่มหลักสำหรับการอัดเสียง */
-        .btn-main { 
-            background-color: #00B900; color: white; border: none; padding: 22px; 
-            border-radius: 40px; font-size: 22px; width: 100%; font-weight: bold; 
-            cursor: pointer; box-shadow: 0 6px 20px rgba(0,185,0,0.3); transition: 0.3s;
-        }
-        .btn-main:active { transform: scale(0.98); box-shadow: 0 2px 10px rgba(0,185,0,0.2); }
-        
-        .status-box { margin-top: 40px; padding: 15px; border-radius: 12px; background: #f0f0f0; font-size: 14px; }
-        
-        /* ปุ่มสำหรับรีเซ็ตสิทธิ์ กรณีมีปัญหา */
-        .btn-fix { margin-top: 20px; background: none; border: 1px solid #ccc; color: #999; padding: 8px 15px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+        body { font-family: sans-serif; text-align: center; padding: 40px 20px; }
+        .btn { background: #00B900; color: #fff; border: none; padding: 20px; border-radius: 40px; font-size: 20px; width: 100%; font-weight: bold; }
+        #errorLog { color: red; margin-top: 20px; font-size: 14px; background: #fff0f0; padding: 10px; border-radius: 10px; display: none; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="icon">🎤</div>
-        <h1>น้องเก็บให้</h1>
-        <p>กดปุ่มเพื่อเริ่มบันทึกเสียงงานของคุณ</p>
-        
-        <button class="btn-main" id="voiceBtn">เริ่มบันทึกเสียง</button>
-
-        <div class="status-box" id="status">กำลังเตรียมระบบ...</div>
-        
-        <button class="btn-fix" onclick="resetApp()">ปุ่มกดไม่ทำงาน? (ล้างสิทธิ์และลองใหม่)</button>
-    </div>
+    <h2>🎤 ทดสอบอัดเสียง</h2>
+    <button class="btn" id="voiceBtn">กดตรงนี้เพื่ออัดเสียง</button>
+    <div id="status" style="margin-top:20px; color: #666;">กำลังเช็กสิทธิ์...</div>
+    <div id="errorLog"></div>
 
     <script>
-        // 1. เริ่มต้นระบบ LIFF
-        async function startSystem() {
+        async function start() {
             try {
                 await liff.init({ liffId: "2009031318-2mGj5MQZ" });
-                
-                if (!liff.isLoggedIn()) {
-                    liff.login(); // บังคับล็อกอินเพื่อให้สิทธิ์ CHAT_MESSAGE ทำงาน
-                } else {
-                    document.getElementById('status').innerText = "✅ ระบบพร้อมอัดเสียงและส่งเข้าแชท";
-                    
+                if (!liff.isLoggedIn()) { liff.login(); }
+                else {
+                    document.getElementById('status').innerText = "✅ ระบบ SDK เชื่อมต่อสำเร็จ";
                     document.getElementById('voiceBtn').onclick = function() {
-                        // 2. คำสั่งเปิดหน้าจออัดเสียงของ LINE
-                        // เราใช้ "line://" scheme เพราะเป็นวิธีเดียวที่เรียกไมค์มาตรฐานของ LINE ได้
-                        window.location.href = "line://nv/voiceRecorder/";
+                        try {
+                            // ลองเปิดด้วยวิธีมาตรฐาน
+                            window.location.href = "line://nv/voiceRecorder/";
+                        } catch (e) {
+                            showError("ปุ่มกดพัง: " + e.message);
+                        }
                     };
                 }
             } catch (err) {
-                document.getElementById('status').innerHTML = "❌ เกิดข้อผิดพลาด: " + err;
+                showError("ระบบ LINE บล็อก: " + err.code + " - " + err.message);
             }
         }
-
-        // ฟังก์ชันช่วยชีวิต กรณีเครื่องจำสิทธิ์เก่า
-        function resetApp() {
-            liff.logout();
-            location.reload();
+        function showError(msg) {
+            const log = document.getElementById('errorLog');
+            log.style.display = 'block';
+            log.innerText = msg;
         }
-
-        startSystem();
+        start();
     </script>
 </body>
 </html>
